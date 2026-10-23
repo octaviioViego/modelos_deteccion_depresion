@@ -1,0 +1,12 @@
+# Ignorar el corpus completo
+Datos/corpusMentalRiskES/
+
+# Ignorar el entorno virtual
+Progamas/.venv/
+
+# Ignorar variables de entorno
+.env
+
+# Archivos de Python
+__pycache__/
+*.pyc
