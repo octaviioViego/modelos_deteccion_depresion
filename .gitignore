@@ -1,6 +1,6 @@
 # Ignorar el corpus completo
 Datos/corpusMentalRiskES/
-Datos/corpusMetalRiskESCSV
+Datos/corpusMetalRiskESCSV/
 
 # Ignorar el entorno virtual
 Progamas/.venv/
