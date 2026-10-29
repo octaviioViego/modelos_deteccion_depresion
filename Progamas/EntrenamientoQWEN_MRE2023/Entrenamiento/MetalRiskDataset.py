@@ -1,15 +1,23 @@
-from Progamas.EntrenamientoQWEN_MRE2023.Entrenamiento.Contexto import enviar_contexto
+
 from torch.utils.data import Dataset
+from Contexto import enviar_contexto
+
 
 class MetalRiskDataset(Dataset):
-    
-    def __init__(self, dataframe):
+    def __init__(self, dataframe, tokenizer, system_prompt):
         self.examples = []
-        LABEL_COLUMN = "etiqueta_gold"
-        TEXT_COLUMN = "mensaje"
-        
-        for mensaje, etiqueta in zip(dataframe[TEXT_COLUMN],dataframe[LABEL_COLUMN],):
-            self.examples.append(enviar_contexto(mensaje, etiqueta))
+
+        for mensaje, etiqueta in zip(
+            dataframe["mensaje"],
+            dataframe["etiqueta_gold"],
+        ):
+            ejemplo = enviar_contexto(
+                mensaje,
+                etiqueta,
+                tokenizer,
+                system_prompt,
+            )
+            self.examples.append(ejemplo)
 
     def __len__(self):
         return len(self.examples)

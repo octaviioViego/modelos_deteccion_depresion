@@ -7,10 +7,10 @@ import pandas as pd
 import torch
 from dotenv import load_dotenv
 
-from Progamas.EntrenamientoQWEN_MRE2023.Entrenamiento.CargaCSV import cargar_csv
-from Progamas.EntrenamientoQWEN_MRE2023.Entrenamiento.Contexto import enviar_contexto
-from Progamas.EntrenamientoQWEN_MRE2023.Entrenamiento.MetalRiskDataset import MetalRiskDataset
-from  Progamas.EntrenamientoQWEN_MRE2023.Entrenamiento.CausalCollator import  CausalCollator
+from CargaCSV import cargar_csv
+from Contexto import enviar_contexto
+from MetalRiskDataset import MetalRiskDataset
+from CausalCollator import  CausalCollator
 from torch.utils.data import Dataset
 from transformers import (AutoTokenizer,
                           AutoModelForCausalLM,
@@ -44,7 +44,7 @@ PATHS = {
 TRAIN_CSV = PATHS["Terea2_train_2023"] / "Tarea_A.csv"
 TRIAL_CSV = PATHS["Terea2_trial_2023"] / "Tarea_A.csv"
 
-OUTPUT_DIR = PATHS("Tarea2_prediccion_2023")
+OUTPUT_DIR = PATHS["Tarea2_prediccion_2023"]
 ADAPTER_DIR = OUTPUT_DIR / "adaptador"
 MODEL_ID = "Qwen/Qwen3.5-9B"
 LABEL_COLUMN = "etiqueta_gold"
@@ -59,8 +59,10 @@ LORA_R = 8
 LORA_ALPHA = 16
 LORA_DROPOUT = 0.05
 SEED = 42
-SYSTEM_PROMPT  = pd.read_csv("Prompt.txt", sep="\t")
+SYSTEM_PROMPT = Path("Prompt.txt").read_text(encoding="utf-8").strip()
 
+if not SYSTEM_PROMPT:
+    raise ValueError("Prompt.txt está vacío.")
 
 # ============================================================
 # VALIDACIONES INICIALES
@@ -117,19 +119,25 @@ if tokenizer.pad_token_id is None:
 tokenizer.padding_side = "right"
 
 END_IDS = tokenizer.encode(
-    "<|im_end|>", add_special_tokens=False
-)
+     "<|im_end|>", add_special_tokens=False
+ )
 
 if not END_IDS:
-    raise RuntimeError("No se pudo identificar el token de fin de turno.")
+     raise RuntimeError("No se pudo identificar el token de fin de turno.")
 
 
 print("\nTokenizando Train...")
-train_dataset = MetalRiskDataset(train_df)
+#train_dataset = MetalRiskDataset(train_df,tokenizer)
+train_dataset = MetalRiskDataset(train_df,
+                                 tokenizer,
+                                 SYSTEM_PROMPT,)
+
 
 print("Tokenizando Trial...")
-trial_dataset = MetalRiskDataset(trial_df)
-
+#trial_dataset = MetalRiskDataset(trial_df,tokenizer)
+trial_dataset = MetalRiskDataset(trial_df,
+                                 tokenizer,
+                                SYSTEM_PROMPT,)
 print("Tokenización terminada.")
 
 
@@ -179,7 +187,7 @@ training_args = TrainingArguments(output_dir=str(OUTPUT_DIR / "checkpoints"),
                                   gradient_accumulation_steps=GRADIENT_ACCUMULATION,                                    
                                   learning_rate=LEARNING_RATE,
                                   lr_scheduler_type="linear",
-                                  warmup_ratio=0.03,
+                                  #warmup_ratio=0.03,
                                   weight_decay=0.01,
                                   optim="adamw_torch",
                                   
@@ -259,12 +267,24 @@ def predecir_mensaje(mensaje):
         },
     ]
 
-    prompt_ids = tokenizer.apply_chat_template(messages,
-                                               tokenize=True,
-                                               add_generation_prompt=True,
-                                               enable_thinking=False,
-                                               return_tensors="pt",
-    ).to(device)
+
+    prompt_text = tokenizer.apply_chat_template(messages,
+                                                tokenize=False,
+                                                add_generation_prompt=True,
+                                                enable_thinking=False,)
+    prompt_text = prompt_text.replace("<|im_start|>assistant\n<think>\n\n</think>\n",
+                                      "<|im_start|>assistant\n",)
+
+    prompt_ids = tokenizer(prompt_text,
+                           add_special_tokens=False,
+                           return_tensors="pt",)["input_ids"].to(device)
+
+    # prompt_ids = tokenizer.apply_chat_template(messages,
+    #                                            tokenize=True,
+    #                                            add_generation_prompt=True,
+    #                                            enable_thinking=False,
+    #                                            return_tensors="pt",
+    # ).to(device)
 
     attention_mask = torch.ones_like(prompt_ids)
 

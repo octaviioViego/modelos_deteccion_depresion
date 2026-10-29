@@ -2,6 +2,11 @@
 Datos/corpusMentalRiskES/
 Datos/corpusMetalRiskESCSV/
 
+Progamas/EntrenamientoQWEN_MRE2023/Predicciones/adaptador/adapter_model.safetensors
+
+Progamas/EntrenamientoQWEN_MRE2023/Predicciones/adaptador/
+Progamas/EntrenamientoQWEN_MRE2023/Predicciones/checkpoints/
+
 # Ignorar el entorno virtual
 Progamas/.venv/
 
